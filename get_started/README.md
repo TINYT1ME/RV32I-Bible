@@ -1,9 +1,9 @@
-# Get Started
+# 🚀 Get Started
 > 🚨 **Prerequisite Software**
 > Before starting, make sure you have all prerequisite software installed.
-> See the [here](PREREQ.md) file for detailed instructions.
+> See the [here](PREREQ.md) for detailed instructions.
 
-This get started section is used to demonstrate the development process using the tools found in [prereq. software](PREREQ.md). This section will show how to go from nothing to functional and tested hdl ready to be programmed onto an FPGA.
+This get started section is used to demonstrate the development process using the tools found in [prereq. software](PREREQ.md). This section will show how to go from nothing to functional and tested HDL ready to be programmed onto an FPGA.
 
 ## **Project Overview**
 
@@ -14,7 +14,7 @@ This project demonstrates the development tools by building a **4-bit counter an
 - A 3-word memory with auto-cycling addresses (current address value shown on right 7-segment)
 - Ability to increment the counter and store values in memory
 
-While this project has no practical application, it effectively showcases the the development process/testing process with the tools we will be using to create the RV32I CPU.
+While this project has no practical application, it effectively showcases the development process/testing process with the tools we will be using to create the RV32I CPU.
 
 
 ### **User Interface**
@@ -71,93 +71,11 @@ ls # apio.ini, go-board.pcf, main_tb.gtkw, main_tb.v, main.v
 rm main_tb.v
 rm main.v
 ```
-> ❗Take a look at go-board.pcf
-> This file is a map to our hardware, we will use the names found in this file to interface with our board(ie LED1, SW1...)
+> ❗Take a look at **go-board.pcf**
+> This file is a map to our hardware, we will use the names found in this file to interface with our board (i.e., LED1, SW1...)
+## 2. seven_segment.sv
 
-## 2. four_bit_memory.sv
-
-Create a new file called `four_bit_memory.sv` - this will be our core memory component.
-
-#### **Inputs**
-- **Clock**
-- **Write Enable** - Controls write operations (active high)
-- **Increment Address** - When enabled, address automatically increments
-- **Write Data** - 4-bit data to be written to memory
-
-#### **Outputs**
-- **Read Data** - 4-bit data read from current memory location
-
-#### **Info**
-- **Memory Size**: 3 words × 4 bits each
-- **Address Range**: 0, 1, 2 (with automatic wrapping)
-- **Data Width**: 4 bits
-```sv
-// ============================================================================
-// Four-Bit Memory Module
-// ============================================================================
-//   - 3 memory locations (addresses 0, 1, 2)
-//   - 4-bit data width
-//   - Automatic address increment with wrapping
-// ============================================================================
-
-module four_bit_memory (
-    input  logic       clk,              // System clock
-    input  logic       write_enable,     // Write enable (active high)
-    input  logic       increment_address,// Address increment enable
-    input  logic [3:0] write_data,       // Data to write (4 bits)
-    output logic [3:0] read_data         // Data read from memory (4 bits)
-);
-
-    // ========================================================================
-    // Memory Declaration
-    // ========================================================================
-    reg [3:0] memory [0:2];  // 3 words of 4-bit data each
-    
-    // Initialize memory with test data
-    initial begin
-        memory[0] <= 4'b0001;  // Address 0: 1 decimal
-        memory[1] <= 4'b0010;  // Address 1: 2 decimal
-        memory[2] <= 4'b0011;  // Address 2: 3 decimal
-    end
-
-    // ========================================================================
-    // Address Management
-    // ========================================================================
-    reg [1:0] current_address = 2'b00;  // Current memory address (0-2)
-    
-    // Address increment logic with write protection
-    always @(posedge clk) begin
-        if (increment_address && ~write_enable) begin
-            // Increment address with wrapping
-            if (current_address == 2'b10)      // At address 2
-                current_address <= 2'b00;      // Wrap to address 0
-            else
-                current_address <= current_address + 1;  // Normal increment
-        end
-    end
-
-    // ========================================================================
-    // Write Logic
-    // ========================================================================
-    always @(posedge clk) begin
-        if (write_enable) begin
-            memory[current_address] <= write_data;  // Write data to current address
-        end
-    end
-
-    // ========================================================================
-    // Read Logic
-    // ========================================================================
-    always_comb begin
-        read_data = memory[current_address];  // Combinational read from current address
-    end
-
-endmodule
-```
-### four_bit_memory.sv Memory Section in the works
-## 3. seven_segment.sv
-
-Create a new file called `seven_segment.sv` - this will handle our display output for the 7-seg displays
+Create a new file called `seven_segment.sv` - this will handle our display output for the 7-segment displays
 
 
 #### **Inputs**
@@ -171,8 +89,7 @@ Create a new file called `seven_segment.sv` - this will handle our display outpu
 #### **Info**
 - **Display Range**: 0-15 (0-9, A-F)
 
-### seven_segment.sv Verification Section in the works
-
+**seven_segment.sv**
 ```sv
 // ============================================================================
 // Seven-Segment Display Driver Module
@@ -266,8 +183,248 @@ module seven_segment (
 
 endmodule
 ```
+---
+### ✅ Verification seven_segment
+Before we write a test with cocotb we must create a Makefile, notice **SIM** points to Verilator, we also have **COCOTB_TOPLEVEL** pointing to seven_segment.sv. Finally **COCOTB_TEST_MODULES** is defined as test_seven_segment(we have not created this file yet).
 
-### seven_segment.sv Verification Section in the works
+Create a new file called `Makefile`
+
+**Makefile**
+```makefile
+# Makefile
+SIM ?= verilator
+TOPLEVEL_LANG ?= verilog
+
+VERILOG_SOURCES += $(PWD)/*.sv
+
+COCOTB_TOPLEVEL = seven_segment
+
+COCOTB_TEST_MODULES = test_seven_segment
+
+include $(shell cocotb-config --makefiles)/Makefile.sim
+```
+
+Now that the Makefile is set up we can write the test script
+
+Create a new file called `test_seven_segment.py`
+
+Take a look at the code below:
+We add the ```@cocotb.test()``` decorator to a function that we would like cocotb to run tests with. All other functions are helpers to the tests. The following code implements these tests:
+- test_random_combinations - randomly assign values to both displays, and verify values
+- test_all_digits_left_display - test all digits on left display
+- test_all_digits_right_display
+
+**test_seven_segment.py**
+```python
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import RisingEdge, Timer
+import random
+
+EXPECTED_PATTERNS = {
+    0: 0b1000000,   # 0
+    1: 0b1111001,   # 1
+    2: 0b0100100,   # 2
+    3: 0b0110000,   # 3
+    4: 0b0011001,   # 4
+    5: 0b0010010,   # 5
+    6: 0b0000010,   # 6
+    7: 0b1111000,   # 7
+    8: 0b0000000,   # 8
+    9: 0b0010000,   # 9
+    10: 0b0001000,  # A
+    11: 0b0000011,  # b
+    12: 0b1000110,  # C
+    13: 0b0100001,  # d
+    14: 0b0000110,  # E
+    15: 0b0001110,  # F
+}
+
+def log(dut, message):
+    dut._log.info(message)
+
+def get_segment_pattern(dut, display="right"):
+    """Extract 7-segment pattern from DUT outputs"""
+    if display == "right":
+        # Right display (S1) - controlled by right_digit input
+        return (int(dut.S1_G.value) << 6) | (int(dut.S1_F.value) << 5) | (int(dut.S1_E.value) << 4) | \
+               (int(dut.S1_D.value) << 3) | (int(dut.S1_C.value) << 2) | (int(dut.S1_B.value) << 1) | int(dut.S1_A.value)
+    else:
+        # Left display (S2) - controlled by left_digit input
+        return (int(dut.S2_G.value) << 6) | (int(dut.S2_F.value) << 5) | (int(dut.S2_E.value) << 4) | \
+               (int(dut.S2_D.value) << 3) | (int(dut.S2_C.value) << 2) | (int(dut.S2_B.value) << 1) | int(dut.S2_A.value)
+
+def check_display_pattern(dut, digit, display="right"):
+    """Check if the display shows the correct pattern for the given digit"""
+    expected = EXPECTED_PATTERNS[digit]
+    actual = get_segment_pattern(dut, display)
+    
+    if actual != expected:
+        raise AssertionError(f"{display} 7 segment pattern mismatch: expected: {expected}, got: {actual}")
+
+@cocotb.test()
+async def test_all_digits_right_display(dut):
+    """Test all digits 0-15 on the right display (S1)"""
+    log(dut, "Starting test for right display (S1) - all digits 0-15")
+    
+    # Initialize inputs
+    dut.left_digit.value = 0
+    dut.right_digit.value = 0
+
+    await Timer(10, unit='ns')
+    
+    # Test each digit on the right display
+    for digit in range(16):
+        dut.right_digit.value = digit
+        await Timer(10, unit='ns')
+        check_display_pattern(dut, digit, "right")
+
+@cocotb.test()
+async def test_all_digits_left_display(dut):
+    """Test all digits 0-15 on the left display (S2)"""
+    log(dut, "Starting test for left display (S2) - all digits 0-15")
+    
+    # Initialize inputs
+    dut.left_digit.value = 0
+    dut.right_digit.value = 0
+    
+    # Wait for initial propagation
+    await Timer(10, unit='ns')
+    
+    # Test each digit on the left display
+    for digit in range(16):
+        dut.left_digit.value = digit
+        await Timer(10, unit='ns')
+        check_display_pattern(dut, digit, "left")
+
+@cocotb.test()
+async def test_random_combinations(dut):
+    """Test random combinations of digits on both displays"""
+    log(dut, "Starting random combination test")
+    
+    random.seed(42)
+    
+    for _ in range(20):
+        left_digit = random.randint(0, 15)
+        right_digit = random.randint(0, 15)
+        
+        dut.left_digit.value = left_digit
+        dut.right_digit.value = right_digit
+        await Timer(10, unit='ns')
+        
+        check_display_pattern(dut, left_digit, "left")
+        check_display_pattern(dut, right_digit, "right")
+
+```
+> Python written tests allow a lot more flexibility in writing tests and debugging
+
+To run these tests we run the following commands
+> If you used venv in setup, make sure to source
+```bash
+make # This will run the test that's targeted in the Makefile
+
+# Later we will create more tests, instead of changing the Makefile to target a new test you could add CLI arguments targeting different tests
+make COCOTB_TOPLEVEL=module_a COCOTB_TEST_MODULES=test_module_a 
+```
+
+Your output should look something like this
+```
+**********************************************************************************************************
+** TEST                                              STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+**********************************************************************************************************
+** test_seven_segment.test_all_digits_right_display   PASS         170.00           0.00     664521.60  **
+** test_seven_segment.test_all_digits_left_display    PASS         170.00           0.00    1037891.82  **
+** test_seven_segment.test_random_combinations        PASS         200.00           0.00     773143.59  **
+**********************************************************************************************************
+** TESTS=3 PASS=3 FAIL=0 SKIP=0                                    540.00           0.00     480877.40  **
+**********************************************************************************************************
+```
+
+Done! Now we have completed some simple tests using cocotb and verilator
+
+## 3. four_bit_memory.sv
+
+Create a new file called `four_bit_memory.sv` - this will be our core memory component.
+
+#### **Inputs**
+- **Clock**
+- **Write Enable** - Controls write operations (active high)
+- **Increment Address** - When enabled, address automatically increments
+- **Write Data** - 4-bit data to be written to memory
+
+#### **Outputs**
+- **Read Data** - 4-bit data read from current memory location
+
+#### **Info**
+- **Memory Size**: 3 words × 4 bits each
+- **Address Range**: 0, 1, 2 (with automatic wrapping)
+- **Data Width**: 4 bits
+
+**four_bit_memory.sv**
+```sv
+// ============================================================================
+// Four-Bit Memory Module
+// ============================================================================
+//   - 3 memory locations (addresses 0, 1, 2)
+//   - 4-bit data width
+//   - Automatic address increment with wrapping
+// ============================================================================
+
+module four_bit_memory (
+    input  logic       clk,              // System clock
+    input  logic       write_enable,     // Write enable (active high)
+    input  logic       increment_address,// Address increment enable
+    input  logic [3:0] write_data,       // Data to write (4 bits)
+    output logic [3:0] read_data         // Data read from memory (4 bits)
+);
+
+    // ========================================================================
+    // Memory Declaration
+    // ========================================================================
+    reg [3:0] memory [0:2];  // 3 words of 4-bit data each
+    
+    // Initialize memory with test data
+    initial begin
+        memory[0] <= 4'b0001;  // Address 0: 1 decimal
+        memory[1] <= 4'b0010;  // Address 1: 2 decimal
+        memory[2] <= 4'b0011;  // Address 2: 3 decimal
+    end
+
+    // ========================================================================
+    // Address Management
+    // ========================================================================
+    reg [1:0] current_address = 2'b00;  // Current memory address (0-2)
+    
+    // Address increment logic with write protection
+    always @(posedge clk) begin
+        if (increment_address && ~write_enable) begin
+            // Increment address with wrapping
+            if (current_address == 2'b10)      // At address 2
+                current_address <= 2'b00;      // Wrap to address 0
+            else
+                current_address <= current_address + 1;  // Normal increment
+        end
+    end
+
+    // ========================================================================
+    // Write Logic
+    // ========================================================================
+    always @(posedge clk) begin
+        if (write_enable) begin
+            memory[current_address] <= write_data;  // Write data to current address
+        end
+    end
+
+    // ========================================================================
+    // Read Logic
+    // ========================================================================
+    always_comb begin
+        read_data = memory[current_address];  // Combinational read from current address
+    end
+
+endmodule
+```
+### ✅ four_bit_memory.sv Verification Section in the works
 
 ## 4. main.sv
 
@@ -285,7 +442,7 @@ Create a new file called `main.sv` - this will be our top-level module that conn
 - **S1_A - S1_G** - Right 7-segment display segments
 - **S2_A - S2_G** - Left 7-segment display segments
 
-
+**main.sv**
 ```sv
 // ============================================================================
 // Top-Level Main Module
@@ -363,22 +520,18 @@ module top (
 endmodule
 ```
 
-### main.sv Verification Section in the works
-
 ## 5. Build & Upload
 >If you are not using Apio, this section does not apply to you
-Now that we are done we can upload and build to our fpga board.
+Now that we are done we can upload and build to our FPGA board.
 
-
-**apio.ini**\
 Make sure the **board** you use is the one selected here, and the **top-module** matches the name in **main.sv**
+
+**apio.ini**
 ```
 [env:default]
 board = go-board
 top-module = top
 ```
-
-
 
 > Make sure your board is connected
 ```bash

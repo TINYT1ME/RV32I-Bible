@@ -1,7 +1,7 @@
 # RV32I-Bible
 ### **UODD Club Project**
 
-## 🚀 Quick Start
+## 🚀 Get Started
 ### [Get Started Guide](get_started/README.md) - Not Finished
 Complete walkthrough using Apio, Cocotb, and Verilator simulation to build a simple system using System Verilog
 

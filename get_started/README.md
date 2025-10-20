@@ -217,8 +217,7 @@ We add the ```@cocotb.test()``` decorator to a function that we would like cocot
 **test_seven_segment.py**
 ```python
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer
+from cocotb.triggers import Timer
 import random
 
 EXPECTED_PATTERNS = {
@@ -385,9 +384,9 @@ module four_bit_memory (
     
     // Initialize memory with test data
     initial begin
-        memory[0] <= 4'b0001;  // Address 0: 1 decimal
-        memory[1] <= 4'b0010;  // Address 1: 2 decimal
-        memory[2] <= 4'b0011;  // Address 2: 3 decimal
+        memory[0] = 4'b0001;  // Address 0: 1 decimal
+        memory[1] = 4'b0010;  // Address 1: 2 decimal
+        memory[2] = 4'b0011;  // Address 2: 3 decimal
     end
 
     // ========================================================================
@@ -424,7 +423,79 @@ module four_bit_memory (
 
 endmodule
 ```
-### ✅ four_bit_memory.sv Verification Section in the works
+### ✅ Verification four_bit_memory 
+Create a new file called `test_seven_segment.py`
+
+- test_four_bit_memory_basic - perform various memory tests(read,write,increment)
+
+**test_four_bit_memory.py**
+```python
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import RisingEdge, Timer
+
+def log(dut, message):
+    dut._log.info(message)
+
+@cocotb.test()
+async def test_four_bit_memory_basic(dut):
+    """Test basic four-bit memory functionality"""
+    log(dut, "Starting four-bit memory test")
+    
+    # Start clock
+    clock = Clock(dut.clk, 10, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Initialize inputs
+    dut.write_enable.value = 0
+    dut.increment_address.value = 0
+    dut.write_data.value = 0
+    
+    # Wait for initial propagation
+    await RisingEdge(dut.clk)
+    await Timer(1, unit='ns')
+    
+    # Check initial memory values
+    log(dut, "Testing initial memory values")
+    assert dut.read_data.value == 1, f"Expected 1 at address 0, got {dut.read_data.value}"
+    
+    # Test address increment
+    log(dut, "Testing address increment")
+    dut.increment_address.value = 1
+    await RisingEdge(dut.clk)
+    await Timer(1, unit='ns')
+    assert dut.read_data.value == 2, f"Expected 2 at address 1, got {dut.read_data.value}"
+    
+    # Test address increment to address 2
+    await RisingEdge(dut.clk)
+    await Timer(1, unit='ns')
+    assert dut.read_data.value == 3, f"Expected 3 at address 2, got {dut.read_data.value}"
+    
+    # Test address wrapping (2 -> 0)
+    await RisingEdge(dut.clk)
+    await Timer(1, unit='ns')
+    assert dut.read_data.value == 1, f"Expected 1 at address 0 (wrapped), got {dut.read_data.value}"
+    
+    # Test write operation
+    log(dut, "Testing write operation")
+    dut.increment_address.value = 0  # Stop incrementing
+    dut.write_enable.value = 1
+    dut.write_data.value = 5
+    await RisingEdge(dut.clk)
+    await Timer(1, unit='ns')
+    assert dut.read_data.value == 5, f"Expected 5 after write, got {dut.read_data.value}"
+    
+    log(dut, "All tests passed!")
+```
+
+**Build and run**
+```bash
+# Clean existing seven_segment builds
+make clean
+
+# make, targeting new test & toplevel
+make COCOTB_TOPLEVEL=four_bit_memory COCOTB_TEST_MODULES=test_four_bit_memory
+```
 
 ## 4. main.sv
 

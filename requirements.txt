@@ -1,5 +1,0 @@
-# Python requirements for RV32I-Bible project
-apio>=0.5.0
-cocotb>=1.8.0
-pytest>=7.0.0
-pytest-cov>=4.0.0

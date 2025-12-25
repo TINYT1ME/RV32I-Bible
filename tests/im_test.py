@@ -34,6 +34,6 @@ async def test_pc_imem(dut):
     # simulation
     for i in range(len(lines)+1):
         await RisingEdge(dut.clk)
-        print(f"Cycle {i}: PC={int(dut.pc_out.value):08X} -> Instruction={int(dut.instr_out.value):08X}")
+        print(f"Cycle {i}: PC={int(dut.pc_out.value):08X} -> Instruction={int(dut.instr_out.value):08X} -> Pipeline Instruction={int(dut.instr_pl_out.value):08X}")
         
     print("\nTest end.")

@@ -64,3 +64,11 @@ Thumbs.db
 
 
 
+.venv/
+sim_build/
+obj_dir/
+*.vcd
+*.fst
+*.log
+
+__pycache__/

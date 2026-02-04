@@ -40,6 +40,11 @@ coverage.xml
 .coverage
 .pytest_cache/
 
+# Assembly
+commands.txt
+*.bin
+*.elf
+
 # IDE
 .vscode/
 .idea/

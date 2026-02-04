@@ -1,37 +1,33 @@
-# 🚀 Get Started
-> 🚨 **Prerequisite Software**
-> Before starting, make sure you have all prerequisite software installed.
-> See the [here](PREREQ.md) for detailed instructions.
-
-This get started section is used to demonstrate the development process using the tools found in [prereq. software](PREREQ.md). This section will show how to go from nothing to functional and tested HDL ready to be programmed onto an FPGA.
+This get started section is used to demonstrate the development process used for the CPU implmenetation.
+This section will show how to go from nothing to functional and tested HDL ready to be programmed onto an FPGA(you can skip uploading to fpga if you do not have one)
 
 ## **Project Overview**
 
 This project demonstrates the development tools by building a **4-bit counter and memory system** with dual 7-segment displays.
 
 **What we'll build:**
+
 - A 4-bit counter (displayed on left 7-segment)
 - A 3-word memory with auto-cycling addresses (current address value shown on right 7-segment)
 - Ability to increment the counter and store values in memory
 
 While this project has no practical application, it effectively showcases the development process/testing process with the tools we will be using to create the RV32I CPU.
 
-
 ### **User Interface**
 
-| **Control** | **Function** | **Description** |
-|-------------|--------------|-----------------|
-| **SW1** | Clock | Advances memory operations |
-| **SW2** | Increment Counter | Increases counter value (0->1->2...->F->0) |
-| **SW3** | Toggle Write Enable | Enable/disable memory writing |
-| **SW4** | Toggle Address Increment | Enable/disable automatic address cycling |
+| **Control** | **Function**             | **Description**                            |
+| ----------- | ------------------------ | ------------------------------------------ |
+| **SW1**     | Clock                    | Advances memory operations                 |
+| **SW2**     | Increment Counter        | Increases counter value (0->1->2...->F->0) |
+| **SW3**     | Toggle Write Enable      | Enable/disable memory writing              |
+| **SW4**     | Toggle Address Increment | Enable/disable automatic address cycling   |
 
-| **Display** | **Shows** |
-|-------------|-----------|
-| **Left 7-Seg** | Current Counter |
-| **Right 7-Seg** | Memory Data | 
-| **LED1** | Write Enable | 
-| **LED2** | Address Increment | 
+| **Display**     | **Shows**         |
+| --------------- | ----------------- |
+| **Left 7-Seg**  | Current Counter   |
+| **Right 7-Seg** | Memory Data       |
+| **LED1**        | Write Enable      |
+| **LED2**        | Address Increment |
 
 ### **Flow**
 
@@ -46,18 +42,23 @@ While this project has no practical application, it effectively showcases the de
 We must create the following SystemVerilog modules:
 
 - **`four_bit_memory.sv`** - 3-word memory with address cycling
-- **`seven_segment.sv`** - Dual 7-segment display driver  
+- **`seven_segment.sv`** - Dual 7-segment display driver
 - **`main.sv`** - Top-level integration module
 
-## 1.  Creating the project
+## 1. Creating the project
+
 > Make sure you are in the python venv
+
 ```bash
 mkdir example && cd example
 ```
-I am using the [Go-board](https://nandland.com/the-go-board/) and will continue the walkthrough targeting the [ICE40](https://www.latticesemi.com/ice40) chip. 
+
+I am using the [Go-board](https://nandland.com/the-go-board/) and will continue the walkthrough targeting the [ICE40](https://www.latticesemi.com/ice40) chip.
+
 > Note: Apio currently supports the ICE40, ECP5, and GOWIN FPGA architectures
 
 **List and Fetch example template with Apio**
+
 ```bash
 # List all examples
 apio examples list
@@ -71,25 +72,30 @@ ls # apio.ini, go-board.pcf, main_tb.gtkw, main_tb.v, main.v
 rm main_tb.v
 rm main.v
 ```
+
 > ❗Take a look at **go-board.pcf**
 > This file is a map to our hardware, we will use the names found in this file to interface with our board (i.e., LED1, SW1...)
+
 ## 2. seven_segment.sv
 
 Create a new file called `seven_segment.sv` - this will handle our display output for the 7-segment displays
 
-
 #### **Inputs**
+
 - **Left Digit** - 4-bit input (0-15) for the left display
 - **Right Digit** - 4-bit input (0-15) for the right display
 
 #### **Outputs**
+
 - **S1_A through S1_G** - 7-segment outputs for display 1 (right)
 - **S2_A through S2_G** - 7-segment outputs for display 2 (left)
 
 #### **Info**
+
 - **Display Range**: 0-15 (0-9, A-F)
 
 **seven_segment.sv**
+
 ```sv
 // ============================================================================
 // Seven-Segment Display Driver Module
@@ -183,13 +189,17 @@ module seven_segment (
 
 endmodule
 ```
+
 ---
+
 ### ✅ Verification seven_segment
+
 Before we write a test with cocotb we must create a Makefile, notice **SIM** points to Verilator, we also have **COCOTB_TOPLEVEL** pointing to seven_segment.sv. Finally **COCOTB_TEST_MODULES** is defined as test_seven_segment(we have not created this file yet).
 
 Create a new file called `Makefile`
 
 **Makefile**
+
 ```makefile
 # Makefile
 SIM ?= verilator
@@ -209,12 +219,14 @@ Now that the Makefile is set up we can write the test script
 Create a new file called `test_seven_segment.py`
 
 Take a look at the code below:
-We add the ```@cocotb.test()``` decorator to a function that we would like cocotb to run tests with. All other functions are helpers to the tests. The following code implements these tests:
+We add the `@cocotb.test()` decorator to a function that we would like cocotb to run tests with. All other functions are helpers to the tests. The following code implements these tests:
+
 - test_random_combinations - randomly assign values to both displays, and verify values
 - test_all_digits_left_display - test all digits on left display
 - test_all_digits_right_display
 
 **test_seven_segment.py**
+
 ```python
 import cocotb
 from cocotb.triggers import Timer
@@ -257,7 +269,7 @@ def check_display_pattern(dut, digit, display="right"):
     """Check if the display shows the correct pattern for the given digit"""
     expected = EXPECTED_PATTERNS[digit]
     actual = get_segment_pattern(dut, display)
-    
+
     if actual != expected:
         raise AssertionError(f"{display} 7 segment pattern mismatch: expected: {expected}, got: {actual}")
 
@@ -265,13 +277,13 @@ def check_display_pattern(dut, digit, display="right"):
 async def test_all_digits_right_display(dut):
     """Test all digits 0-15 on the right display (S1)"""
     log(dut, "Starting test for right display (S1) - all digits 0-15")
-    
+
     # Initialize inputs
     dut.left_digit.value = 0
     dut.right_digit.value = 0
 
     await Timer(10, unit='ns')
-    
+
     # Test each digit on the right display
     for digit in range(16):
         dut.right_digit.value = digit
@@ -282,14 +294,14 @@ async def test_all_digits_right_display(dut):
 async def test_all_digits_left_display(dut):
     """Test all digits 0-15 on the left display (S2)"""
     log(dut, "Starting test for left display (S2) - all digits 0-15")
-    
+
     # Initialize inputs
     dut.left_digit.value = 0
     dut.right_digit.value = 0
-    
+
     # Wait for initial propagation
     await Timer(10, unit='ns')
-    
+
     # Test each digit on the left display
     for digit in range(16):
         dut.left_digit.value = digit
@@ -300,33 +312,37 @@ async def test_all_digits_left_display(dut):
 async def test_random_combinations(dut):
     """Test random combinations of digits on both displays"""
     log(dut, "Starting random combination test")
-    
+
     random.seed(42)
-    
+
     for _ in range(20):
         left_digit = random.randint(0, 15)
         right_digit = random.randint(0, 15)
-        
+
         dut.left_digit.value = left_digit
         dut.right_digit.value = right_digit
         await Timer(10, unit='ns')
-        
+
         check_display_pattern(dut, left_digit, "left")
         check_display_pattern(dut, right_digit, "right")
 
 ```
+
 > Python written tests allow a lot more flexibility in writing tests and debugging
 
 To run these tests we run the following commands
+
 > If you used venv in setup, make sure to source
+
 ```bash
 make # This will run the test that's targeted in the Makefile
 
 # Later we will create more tests, instead of changing the Makefile to target a new test you could add CLI arguments targeting different tests
-make COCOTB_TOPLEVEL=module_a COCOTB_TEST_MODULES=test_module_a 
+make COCOTB_TOPLEVEL=module_a COCOTB_TEST_MODULES=test_module_a
 ```
 
 Your output should look something like this
+
 ```
 **********************************************************************************************************
 ** TEST                                              STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
@@ -346,20 +362,24 @@ Done! Now we have completed some simple tests using cocotb and verilator
 Create a new file called `four_bit_memory.sv` - this will be our core memory component.
 
 #### **Inputs**
+
 - **Clock**
 - **Write Enable** - Controls write operations (active high)
 - **Increment Address** - When enabled, address automatically increments
 - **Write Data** - 4-bit data to be written to memory
 
 #### **Outputs**
+
 - **Read Data** - 4-bit data read from current memory location
 
 #### **Info**
+
 - **Memory Size**: 3 words × 4 bits each
 - **Address Range**: 0, 1, 2 (with automatic wrapping)
 - **Data Width**: 4 bits
 
 **four_bit_memory.sv**
+
 ```sv
 // ============================================================================
 // Four-Bit Memory Module
@@ -381,7 +401,7 @@ module four_bit_memory (
     // Memory Declaration
     // ========================================================================
     reg [3:0] memory [0:2];  // 3 words of 4-bit data each
-    
+
     // Initialize memory with test data
     initial begin
         memory[0] = 4'b0001;  // Address 0: 1 decimal
@@ -393,7 +413,7 @@ module four_bit_memory (
     // Address Management
     // ========================================================================
     reg [1:0] current_address = 2'b00;  // Current memory address (0-2)
-    
+
     // Address increment logic with write protection
     always @(posedge clk) begin
         if (increment_address && ~write_enable) begin
@@ -423,12 +443,15 @@ module four_bit_memory (
 
 endmodule
 ```
-### ✅ Verification four_bit_memory 
+
+### ✅ Verification four_bit_memory
+
 Create a new file called `test_seven_segment.py`
 
 - test_four_bit_memory_basic - perform various memory tests(read,write,increment)
 
 **test_four_bit_memory.py**
+
 ```python
 import cocotb
 from cocotb.clock import Clock
@@ -441,41 +464,41 @@ def log(dut, message):
 async def test_four_bit_memory_basic(dut):
     """Test basic four-bit memory functionality"""
     log(dut, "Starting four-bit memory test")
-    
+
     # Start clock
     clock = Clock(dut.clk, 10, units="ns")
     cocotb.start_soon(clock.start())
-    
+
     # Initialize inputs
     dut.write_enable.value = 0
     dut.increment_address.value = 0
     dut.write_data.value = 0
-    
+
     # Wait for initial propagation
     await RisingEdge(dut.clk)
     await Timer(1, unit='ns')
-    
+
     # Check initial memory values
     log(dut, "Testing initial memory values")
     assert dut.read_data.value == 1, f"Expected 1 at address 0, got {dut.read_data.value}"
-    
+
     # Test address increment
     log(dut, "Testing address increment")
     dut.increment_address.value = 1
     await RisingEdge(dut.clk)
     await Timer(1, unit='ns')
     assert dut.read_data.value == 2, f"Expected 2 at address 1, got {dut.read_data.value}"
-    
+
     # Test address increment to address 2
     await RisingEdge(dut.clk)
     await Timer(1, unit='ns')
     assert dut.read_data.value == 3, f"Expected 3 at address 2, got {dut.read_data.value}"
-    
+
     # Test address wrapping (2 -> 0)
     await RisingEdge(dut.clk)
     await Timer(1, unit='ns')
     assert dut.read_data.value == 1, f"Expected 1 at address 0 (wrapped), got {dut.read_data.value}"
-    
+
     # Test write operation
     log(dut, "Testing write operation")
     dut.increment_address.value = 0  # Stop incrementing
@@ -484,11 +507,12 @@ async def test_four_bit_memory_basic(dut):
     await RisingEdge(dut.clk)
     await Timer(1, unit='ns')
     assert dut.read_data.value == 5, f"Expected 5 after write, got {dut.read_data.value}"
-    
+
     log(dut, "All tests passed!")
 ```
 
 **Build and run**
+
 ```bash
 # Clean existing seven_segment builds
 make clean
@@ -502,18 +526,21 @@ make COCOTB_TOPLEVEL=four_bit_memory COCOTB_TEST_MODULES=test_four_bit_memory
 Create a new file called `main.sv` - this will be our top-level module that connects everything together.
 
 #### **Inputs**
+
 - **SW1** - Clock input for memory operations
 - **SW2** - Push button to increment the counter
 - **SW3** - Push button to toggle write enable
 - **SW4** - Push button to toggle increment enable
 
 #### **Outputs**
+
 - **LED1** - Write enable indicator LED
 - **LED2** - Increment enable indicator LED
 - **S1_A - S1_G** - Right 7-segment display segments
 - **S2_A - S2_G** - Left 7-segment display segments
 
 **main.sv**
+
 ```sv
 // ============================================================================
 // Top-Level Main Module
@@ -592,12 +619,14 @@ endmodule
 ```
 
 ## 5. Build & Upload
->If you are not using Apio, this section does not apply to you
-Now that we are done we can upload and build to our FPGA board.
+
+> If you are not using Apio, this section does not apply to you
+> Now that we are done we can upload and build to our FPGA board.
 
 Make sure the **board** you use is the one selected here, and the **top-module** matches the name in **main.sv**
 
 **apio.ini**
+
 ```
 [env:default]
 board = go-board
@@ -605,8 +634,10 @@ top-module = top
 ```
 
 > Make sure your board is connected
+
 ```bash
 apio build
 apio upload
 ```
+
 You should now be able to play around with our system on your physical board

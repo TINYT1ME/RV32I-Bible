@@ -59,3 +59,21 @@ Thumbs.db
 # Logs
 *.log
 
+
+
+
+
+
+
+
+
+
+
+.venv/
+sim_build/
+obj_dir/
+*.vcd
+*.fst
+*.log
+
+__pycache__/

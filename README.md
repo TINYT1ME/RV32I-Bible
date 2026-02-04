@@ -1,15 +1,18 @@
 # RV32I-Bible
 ### **UODD Club Project**
 
-## 🚀 Get Started
-### [Get Started Guide](get_started/README.md) - Not Finished
-Complete walkthrough using Apio, Cocotb, and Verilator simulation to build a simple system using System Verilog
+###  [Roadmap/Goal](PLAN.md)
 
-## 📋 Prerequisites
-See [Prerequisites](get_started/PREREQ.md) for detailed installation instructions.
+**[Guide](get_started/README.md)** - Unfamiliar with Cocotb? Check out this guide. Complete walkthrough using Apio, Cocotb, and Verilator simulation
 
-## 🛠️ Tools Used
-- **Apio**: FPGA development and build system
+**[Prerequisites](get_started/PREREQ.md)** - Installation and setup instructions
+
+
+**[Contributing Guidelines](CONTRIBUTING.md)**
+
+
+## Tools Used
 - **Verilator**: Verilog/SystemVerilog simulator
 - **Cocotb**: Python-based verification framework
-- **Python3**
+- **Python3**: Testing and automation
+- **Apio** - FPGA programming. IF you are using go-board/apio compatible chips

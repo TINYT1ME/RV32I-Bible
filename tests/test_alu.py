@@ -1,3 +1,7 @@
+"""
+Test for alu.sv
+make TOPLEVEL=alu MODULE=test_alu
+"""
 import cocotb
 from cocotb.triggers import Timer
 

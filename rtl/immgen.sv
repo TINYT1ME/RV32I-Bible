@@ -37,7 +37,7 @@ module immgen (
       // This one is easy, we just take the 12-bit immediate field and sign extend it
       //----------------------------------------------------------------------
       // Instruction bit layout
-      // We use this -> [31]     Sign bit (20{instr[31]}) we fill the rest of the bits on the left with this bit 20
+      // We use this -> [31] Sign bit (20{instr[31]}) we fill the rest of the bits on the left with this bit 20
       // We use this -> [31:20] 12-bit immediate field (instr[31:20])
       // [19:15] rs1 (dont care)
       // [14:12] funct3 (dont care)
@@ -54,7 +54,7 @@ module immgen (
       //----------------------------------------------------------------------
       // S-type
       // Used for: SB, SH, SW
-      // Immediate is split in the instruction so rs1/rs2 stay in fixed positions;
+      // Immediate is split in the instruction so rs1/rs2 stay in fixed positions
       // we take the two parts from the instruction and combine them.
       //----------------------------------------------------------------------
       // Instruction bit layout

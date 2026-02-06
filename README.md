@@ -4,7 +4,19 @@ This repository is a teaching resource for students wanting to know how to imple
 
 ### [Learn how to build a CPU](guide/01.md)
 
+- 0 to 1 guide on how to implement a 32 bit RISC-V CPU
+- Still in the works...
+
 ### [Programming the CPU using qemu](guide/qemu.md)
+
+- Quick guide on how to install QEMU and toolchain
+- Example program to run on emulator
+
+### Resources:
+
+[RISCV-Manual](RISC-V-ISA-Manual.pdf) - CPU implmentation follows this manual(Chapter 2)
+
+[Instruction Set](https://www.vicilogic.com/static/ext/RISCV/RV32I_BaseInstructionSet.pdf) - RV32I full instructions list
 
 ## Quick Setup
 

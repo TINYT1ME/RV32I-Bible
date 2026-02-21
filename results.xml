@@ -1,0 +1,10 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1768333561" />
+    <testcase name="test_beq" classname="test_branch_unit" file="/Users/manalaitouny/RV32I_ALU/test_branch_unit.py" lineno="12" time="0.0004715919494628906" sim_time_ns="2.0" ratio_time="4240.954499494439" />
+    <testcase name="test_bne" classname="test_branch_unit" file="/Users/manalaitouny/RV32I_ALU/test_branch_unit.py" lineno="22" time="0.00017118453979492188" sim_time_ns="2.0000000000000004" ratio_time="11683.298050139278" />
+    <testcase name="test_blt_signed" classname="test_branch_unit" file="/Users/manalaitouny/RV32I_ALU/test_branch_unit.py" lineno="32" time="0.00025010108947753906" sim_time_ns="2.0" ratio_time="7996.766444232602" />
+    <testcase name="test_bge_signed" classname="test_branch_unit" file="/Users/manalaitouny/RV32I_ALU/test_branch_unit.py" lineno="42" time="0.0001800060272216797" sim_time_ns="2.0" ratio_time="11110.739072847682" />
+    <testcase name="test_branch_disabled" classname="test_branch_unit" file="/Users/manalaitouny/RV32I_ALU/test_branch_unit.py" lineno="52" time="0.00012302398681640625" sim_time_ns="1.0" ratio_time="8128.496124031008" />
+  </testsuite>
+</testsuites>
